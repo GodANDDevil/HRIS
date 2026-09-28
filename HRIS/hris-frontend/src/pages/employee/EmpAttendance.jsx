@@ -36,8 +36,7 @@ export default function EmpAttendance() {
 
   return (
     <div>
-      <RuleBanner>Only you can register your own attendance. Administrators can view these records but cannot check you in or out.</RuleBanner>
-
+     
       {/* Pulse card */}
       <div className="mt-5 rounded-[20px] p-7 text-white relative overflow-hidden"
         style={{ background: 'linear-gradient(155deg, #4F46E5 0%, #3730A3 100%)' }}>

@@ -124,16 +124,7 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* Role banner */}
-      <div className="mx-3 mb-1 px-3 py-2.5 rounded-[10px] bg-primary-50 border border-primary-100 text-[11.5px] leading-[1.45] text-primary-700">
-        <b className="block text-[11px] uppercase tracking-[.04em] mb-[3px]">
-          {isAdmin ? 'Monitoring only' : 'Self-service rule'}
-        </b>
-        {isAdmin
-          ? 'You monitor, approve, and report. You cannot check employees in/out or file leave for them.'
-          : 'You register your own attendance and leave. No one can do this for you.'}
-      </div>
-
+      
       {/* Navigation */}
       <nav className="px-3 flex-1 overflow-y-auto py-2">
         {isAdmin ? (
