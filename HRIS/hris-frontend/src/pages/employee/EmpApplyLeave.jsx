@@ -54,8 +54,6 @@ export default function EmpApplyLeave() {
 
   return (
     <div>
-      <RuleBanner>Leave requests must originate from your own account. Administrators cannot submit a leave request on your behalf.</RuleBanner>
-
       <div className="grid mt-5 gap-5" style={{ gridTemplateColumns: '1.5fr 1fr' }}>
         {/* Form */}
         <div className="bg-surface border border-border rounded-[14px] shadow-sm p-5">
