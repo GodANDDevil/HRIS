@@ -6,6 +6,6 @@ from django.urls import path, include
 
 urlpatterns = [
     path('django-admin/', admin.site.urls),
-    path('', include('HRIS_APPS.urls')),
+    path('api/', include('HRIS_APPS.urls')),
 ]
 
