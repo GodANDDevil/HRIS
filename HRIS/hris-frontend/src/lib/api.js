@@ -40,17 +40,42 @@ export async function apiRequest(path, options = {}) {
 
 // The current Django project does not yet define this route. This function is
 // ready to use if a JWT login endpoint is added later; it does not simulate login.
+
 export async function loginWithApi(username, password) {
-  const data = await apiRequest('/auth/token/', {
+  const response = await fetch('/api/auth/token/', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, password }),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      username: username.trim(),
+      password,
+    }),
   });
-  if (!data?.access) throw new ApiError('The login response did not include an access token.');
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new ApiError(
+      data.detail || 'Invalid email/username or password.',
+      response.status,
+      data,
+    );
+  }
+
+  if (!data.access) {
+    throw new ApiError('Login response did not contain an access token.');
+  }
+
   localStorage.setItem('hris_access_token', data.access);
-  if (data.refresh) localStorage.setItem('hris_refresh_token', data.refresh);
+
+  if (data.refresh) {
+    localStorage.setItem('hris_refresh_token', data.refresh);
+  }
+
   return data;
 }
+
 
 export function clearApiSession() {
   localStorage.removeItem('hris_access_token');

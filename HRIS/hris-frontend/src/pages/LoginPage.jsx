@@ -7,17 +7,35 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [tab, setTab] = useState('employee');
   const [form, setForm] = useState({ username: '', password: '', remember: true });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false)
 
   function onChange(e) {
     const { name, value, type, checked } = e.target;
     setForm(f => ({ ...f, [name]: type === 'checkbox' ? checked : value }));
   }
 
-  function handleSubmit(e) {
-    e.preventDefault();
+  
+async function handleSubmit(e) {
+  e.preventDefault();
+  setError('');
+  setLoading(true);
+
+  try {
+    await loginWithApi(form.username, form.password);
+
+    // Keep the existing app state and route structure for now.
     login(tab);
     navigate(tab === 'admin' ? '/admin' : '/employee');
+  } catch (err) {
+    setError(
+      err.message || 'Login failed. Check your username and password.'
+    );
+  } finally {
+    setLoading(false);
   }
+}
+
 
   const inputCls = 'border border-[#E2E8F0] rounded-[10px] px-3 py-2.5 text-[13.5px] bg-white text-[#0F172A] w-full focus:outline-none focus:border-[#4F46E5] focus:ring-[3px] focus:ring-[#EEF2FF]';
 
@@ -91,9 +109,18 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            {error && (
+  <div
+    role="alert"
+    className="rounded-lg bg-red-50 border border-red-200
+               px-3 py-2 text-sm text-red-700"
+  >
+    {error}
+  </div>
+)}
             <div className="flex flex-col gap-1.5">
               <label className="text-[12.5px] font-semibold text-[#475569]">
-                {tab === 'employee' ? 'Email or Employee ID' : 'Admin email'}
+                {tab === 'employee' ? 'Email or username' : 'Admin emai or username'}
               </label>
               <input className={inputCls} name="username" value={form.username} onChange={onChange}
                 placeholder={tab === 'employee' ? 'aarav.shah@chronoscorp.com' : 'sofia.martinez@chronoscorp.com'} />
@@ -118,8 +145,10 @@ export default function LoginPage() {
               <a href="#" className="font-semibold text-[#4F46E5]">Forgot password?</a>
             </div>
             <button type="submit"
-              className="w-full py-4 px-6 rounded-[12px] bg-[#4F46E5] text-white font-semibold text-[15px] hover:bg-[#4338CA] active:scale-[.98] transition-all mt-2">
-              {tab === 'employee' ? 'Sign in to Employee Portal' : 'Sign in to Admin Portal'}
+            disabled={loading}
+              className="w-full py-4 px-6 rounded-[12px] bg-[#4F46E5] text-white font-semibold text-[15px] disabled:opacity-60">
+                {loading ? 'Signing in...' :
+              (tab === 'employee' ? 'Sign in to Employee Portal' : 'Sign in to Admin Portal')}
             </button>
           </form>
 
