@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import { useNavigate } from 'react-router-dom';
-
+import { loginWithApi } from '../lib/api.js';
 export default function LoginPage() {
   const { login } = useApp();
   const navigate = useNavigate();

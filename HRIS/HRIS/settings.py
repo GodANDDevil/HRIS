@@ -66,6 +66,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'HRIS.urls'
@@ -95,8 +96,12 @@ WSGI_APPLICATION = 'HRIS.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'hris_db',
+        'USER': 'postgres',
+        'PASSWORD': 'Anamolshr12',
+        'HOST': '127.0.0.1',
+        'PORT': '5432',
     }
 }
 
