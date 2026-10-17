@@ -2,7 +2,8 @@ import { useParams, Link } from 'react-router-dom';
 import { useApp } from '../../context/AppContext.jsx';
 import Badge, { statusVariant } from '../../components/ui/Badge.jsx';
 import Avatar from '../../components/ui/Avatar.jsx';
-import { fmtDate, fmtTime, calcHours, leaveTypeLabel } from '../../lib/mockData.js';
+import { fmtTime, calcHours, leaveTypeLabel } from '../../lib/mockData.js';
+import { localDateIso } from '../../lib/api.js';
 
 export default function AdminEmployeeDetails() {
   const { empId } = useParams();
@@ -25,7 +26,7 @@ export default function AdminEmployeeDetails() {
 
   const empLeave = state.leaveRequests.filter(l => l.empId === empId);
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateIso();
   const todayAtt = state.attendance.find(a => a.empId === empId && a.date === today);
   const todayStatus = todayAtt?.checkIn && !todayAtt?.checkOut ? 'Checked In'
     : todayAtt?.checkIn && todayAtt?.checkOut ? 'Checked Out' : 'Not Checked In';

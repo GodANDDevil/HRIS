@@ -1,17 +1,18 @@
 import { Link } from 'react-router-dom';
 import { useApp } from '../../context/AppContext.jsx';
-import { CURRENT_EMP_ID } from '../../lib/mockData.js';
+import { localDateIso } from '../../lib/api.js';
 import Badge, { statusVariant } from '../../components/ui/Badge.jsx';
 import Avatar from '../../components/ui/Avatar.jsx';
 import { useClock } from '../../hooks/useClock.js';
 
 export default function EmpDashboard() {
-  const { state, dispatch, toast } = useApp();
+  const { state, actions, toast } = useApp();
+  const CURRENT_EMP_ID = state.currentEmpId;
   const { time: liveTime, date } = useClock();
   const time = liveTime.replace(/:\d{2}(?=\s)/, '');
   const emp = state.employees.find(e => e.id === CURRENT_EMP_ID);
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateIso();
   const todayRec = state.attendance.find(a => a.empId === CURRENT_EMP_ID && a.date === today);
 
   const checkedIn  = !!todayRec?.checkIn;
@@ -44,13 +45,21 @@ export default function EmpDashboard() {
   });
   const monthLabel = calendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
-  function checkIn() {
-    dispatch({ type: 'CHECK_IN' });
-    toast('success', 'Checked in', `You checked in at ${time}.`);
+  async function checkIn() {
+    try {
+      await actions.checkIn();
+      toast('success', 'Checked in', `You checked in at ${time}.`);
+    } catch (err) {
+      toast('error', 'Check-in failed', err.message);
+    }
   }
-  function checkOut() {
-    dispatch({ type: 'CHECK_OUT' });
-    toast('info', 'Checked out', `You checked out at ${time}.`);
+  async function checkOut() {
+    try {
+      await actions.checkOut();
+      toast('info', 'Checked out', `You checked out at ${time}.`);
+    } catch (err) {
+      toast('error', 'Check-out failed', err.message);
+    }
   }
 
   function fmtTs(iso) {
@@ -74,7 +83,7 @@ export default function EmpDashboard() {
               <Badge variant={statusVariant(status)} dot>{status}</Badge>
             </div>
             <div className="flex gap-8 mt-6 flex-wrap">
-              {[['Check-in', fmtTs(todayRec?.checkIn)], ['Check-out', fmtTs(todayRec?.checkOut)], ['Hours today', '—']].map(([label, value]) => (
+              {[['Check-in', fmtTs(todayRec?.checkIn)], ['Check-out', fmtTs(todayRec?.checkOut)], ['Hours today', todayRec?.formatted_working_hours || '—']].map(([label, value]) => (
                 <div key={label}>
                   <div className="text-[10px] text-indigo-100 uppercase tracking-[.08em]">{label}</div>
                   <div className="font-mono text-[16px] font-semibold mt-1">{value}</div>
@@ -159,7 +168,7 @@ export default function EmpDashboard() {
             </div>
           </div>
           <div className="pt-5 grid grid-cols-2 gap-x-5 gap-y-4 text-[12px]">
-            {leaveRows.map(row => <div key={row.key} className="flex justify-between gap-2"><span className="text-ink-mute">{row.label} Used</span><strong>{state.leaveBalance[row.key].used} days</strong></div>)}
+            {leaveRows.map(row => <div key={row.key} className="flex justify-between gap-2"><span className="text-ink-mute">{row.label} Used</span><strong>{state.leaveBalance[row.key]?.used ?? 0} days</strong></div>)}
             <div className="flex justify-between gap-2"><span className="text-ink-mute">Remaining Balance</span><strong className="text-primary">{remaining} days</strong></div>
           </div>
         </div>

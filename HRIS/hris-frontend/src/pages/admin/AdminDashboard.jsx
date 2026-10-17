@@ -5,29 +5,38 @@ import Badge, { statusVariant } from '../../components/ui/Badge.jsx';
 import Avatar from '../../components/ui/Avatar.jsx';
 import { RuleBanner } from '../../components/ui/RuleBanner.jsx';
 import { leaveTypeLabel } from '../../lib/mockData.js';
+import { localDateIso } from '../../lib/api.js';
 
 export default function AdminDashboard() {
-  const { state, dispatch, toast } = useApp();
+  const { state, actions, toast } = useApp();
   const { employees, attendance, leaveRequests } = state;
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateIso();
   const todayAtt = attendance.filter(a => a.date === today);
   const totalEmployees = employees.length;
-  const presentToday = todayAtt.filter(a => a.status !== 'Absent').length;
+  const presentToday = todayAtt.filter(a => a.checkIn).length;
   const checkedIn = todayAtt.filter(a => a.checkIn && !a.checkOut).length;
   const checkedOut = todayAtt.filter(a => a.checkIn && a.checkOut).length;
   const lateToday = todayAtt.filter(a => a.status === 'Late').length;
-  const absentToday = employees.length - presentToday;
+  const absentToday = Math.max(0, employees.filter(e => e.status === 'Active').length - presentToday);
   const pendingLeave = leaveRequests.filter(l => l.status === 'Pending');
   const onLeave = leaveRequests.filter(l => l.status === 'Approved' && l.start <= today && l.end >= today).length;
 
-  function approve(id) {
-    dispatch({ type: 'APPROVE_LEAVE', id });
-    toast('success', 'Leave approved', 'The leave request has been approved.');
+  async function approve(id) {
+    try {
+      await actions.reviewLeave(id, 'APPROVED');
+      toast('success', 'Leave approved', 'The leave request has been approved.');
+    } catch (err) {
+      toast('error', 'Could not approve', err.message);
+    }
   }
-  function reject(id) {
-    dispatch({ type: 'REJECT_LEAVE', id });
-    toast('info', 'Leave rejected', 'The leave request has been rejected.');
+  async function reject(id) {
+    try {
+      await actions.reviewLeave(id, 'REJECTED');
+      toast('info', 'Leave rejected', 'The leave request has been rejected.');
+    } catch (err) {
+      toast('error', 'Could not reject', err.message);
+    }
   }
 
   const thCls = 'text-left text-[11px] uppercase tracking-[.04em] text-ink-mute px-3.5 py-2.5 border-b border-border whitespace-nowrap font-semibold';
@@ -89,6 +98,9 @@ export default function AdminDashboard() {
                   <td className={`${tdCls} font-mono`}>{l.days}</td>
                   <td className={`${tdCls} font-mono`}>{l.submitted}</td>
                   <td className={tdCls}>
+                    {l.empId === state.currentEmpId ? (
+                      <span className="text-[12px] text-ink-mute italic">Your request — another HR member reviews it</span>
+                    ) : (
                     <div className="flex gap-1.5">
                       <button onClick={() => approve(l.id)}
                         className="px-3 py-1.5 rounded-[8px] text-[12.5px] font-semibold bg-success text-white hover:bg-success-700 transition-colors">
@@ -99,6 +111,7 @@ export default function AdminDashboard() {
                         Reject
                       </button>
                     </div>
+                    )}
                   </td>
                 </tr>
               )) : (

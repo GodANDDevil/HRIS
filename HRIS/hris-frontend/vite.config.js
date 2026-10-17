@@ -12,11 +12,13 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': djangoProxy,
+      '/media': djangoProxy, // uploaded leave documents
     },
   },
   preview: {
     proxy: {
       '/api': djangoProxy,
+      '/media': djangoProxy,
     },
   },
 })

@@ -1,12 +1,11 @@
 import { useApp } from '../../context/AppContext.jsx';
-import { CURRENT_EMP_ID } from '../../lib/mockData.js';
 import Avatar from '../../components/ui/Avatar.jsx';
 import Badge from '../../components/ui/Badge.jsx';
 import { Banner } from '../../components/ui/RuleBanner.jsx';
 
 export default function EmpProfile() {
   const { state } = useApp();
-  const emp = state.employees.find(e => e.id === CURRENT_EMP_ID);
+  const emp = state.employees.find(e => e.id === state.currentEmpId) || state.user;
 
   if (!emp) return null;
 
@@ -18,7 +17,7 @@ export default function EmpProfile() {
         <div className="font-bold text-[16px]">{emp.name}</div>
         <div className="text-ink-soft text-[12.5px] mt-1">{emp.position}</div>
         <div className="mt-2">
-          <Badge variant="green" dot>Active</Badge>
+          <Badge variant={emp.status === 'Active' ? 'green' : 'red'} dot>{emp.status}</Badge>
         </div>
         <div className="h-px bg-border my-4" />
         <div className="flex flex-col gap-2.5 text-[13px] text-left">
@@ -49,9 +48,9 @@ export default function EmpProfile() {
             ['Employee ID',       <span key="id" className="font-semibold font-mono">{emp.id}</span>],
             ['Department',        <span key="dept" className="font-semibold">{emp.dept}</span>],
             ['Position',          <span key="pos" className="font-semibold">{emp.position}</span>],
-            ['Employment status', <Badge key="status" variant="green" dot>Active</Badge>],
+            ['Employment status', <Badge key="status" variant={emp.status === 'Active' ? 'green' : 'red'} dot>{emp.status}</Badge>],
             ['Joining date',      <span key="join" className="font-semibold">{emp.join}</span>],
-            ['Manager',           <span key="mgr" className="font-semibold">Sofia Martinez</span>],
+            ['Email',             <span key="mail" className="font-semibold">{emp.email}</span>],
           ].map(([label, value]) => (
             <div key={label}>
               <div className="text-ink-mute text-[11.5px] mb-1">{label}</div>

@@ -10,6 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
+import os
+from datetime import timedelta
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -51,14 +53,27 @@ INSTALLED_APPS = [
 CORS_ALLOWED_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173']
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.SessionAuthentication',
+        # JWT first: if SessionAuthentication runs first and the browser also has
+        # a django-admin session cookie for localhost, DRF enforces CSRF and
+        # every POST from the React app fails with "CSRF Failed".
         'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
 }
+
+# SimpleJWT's default access token lives only 5 minutes. The frontend now
+# refreshes automatically, but a longer window avoids constant refreshes.
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+}
 MIDDLEWARE = [
+    # CorsMiddleware must sit above CommonMiddleware, otherwise responses that
+    # are short-circuited (e.g. APPEND_SLASH redirects) never get CORS headers.
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -66,7 +81,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'HRIS.urls'
@@ -97,11 +111,12 @@ WSGI_APPLICATION = 'HRIS.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'hris_db',
-        'USER': 'postgres',
-        'PASSWORD': 'Anamolshr12',
-        'HOST': '127.0.0.1',
-        'PORT': '5432',
+        'NAME': os.environ.get('DB_NAME', 'hris_db'),
+        'USER': os.environ.get('DB_USER', 'postgres'),
+        # Move this into an environment variable / .env before sharing the repo.
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'Anamolshr12'),
+        'HOST': os.environ.get('DB_HOST', '127.0.0.1'),
+        'PORT': os.environ.get('DB_PORT', '5432'),
     }
 }
 
@@ -130,7 +145,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+# Local time is used for "today", late check-ins, etc.
+TIME_ZONE = 'Asia/Kathmandu'
 
 USE_I18N = True
 
@@ -141,6 +157,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+# Uploaded leave documents
+MEDIA_URL = 'media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 
 # Default primary key field type

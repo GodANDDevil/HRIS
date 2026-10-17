@@ -1,14 +1,14 @@
+
 import { useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import { useNavigate } from 'react-router-dom';
 import {
   loginWithApi,
-  api,
   clearApiSession,
 } from '../lib/api.js';
 
 export default function LoginPage() {
-  const { login } = useApp();
+  const { startSession } = useApp();
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
@@ -38,45 +38,19 @@ export default function LoginPage() {
       // Authenticate using the existing Django JWT endpoint.
       await loginWithApi(form.username, form.password);
 
-      // Check which existing workspace endpoint the account can access.
-      // This is a frontend routing fallback, not definitive role detection.
-      let role = 'employee';
-
-      try {
-        await api.employees();
-        role = 'admin';
-      } catch (apiError) {
-        if (apiError.status === 401 || apiError.status === 403) {
-          role = 'employee';
-        } else {
-          throw apiError;
-        }
-      }
-
-      const enteredUsername = form.username.trim();
-
-      const user = {
-        name: enteredUsername.includes('@')
-          ? enteredUsername.split('@')[0]
-          : enteredUsername,
-        email: enteredUsername.includes('@')
-          ? enteredUsername
-          : '',
-        username: enteredUsername,
-      };
-
-      // Pass the user to the existing application context.
-      login(role, user);
-
+      // /api/me/ returns the linked employee profile and whether it is HR.
+      const role = await startSession();
       navigate(role === 'admin' ? '/admin' : '/employee');
-    
     } catch (err) {
       clearApiSession();
 
       if (err.status === 401) {
         setError('Invalid email/username or password.');
       } else if (err.status === 403) {
-        setError('You do not have permission to access this workspace.');
+        setError(err.message || 'This account is inactive.');
+      } else if (err.status === 404 && err.data?.detail) {
+        // Login worked but the Django user has no Employee profile linked.
+        setError(err.data.detail);
       } else if (err.status >= 500) {
         setError('Server error. Please try again later.');
       } else if (err.status === 404) {

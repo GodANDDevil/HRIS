@@ -10,6 +10,7 @@ import LoginPage from './pages/LoginPage.jsx';
 import AdminDashboard      from './pages/admin/AdminDashboard.jsx';
 import AdminEmployees      from './pages/admin/AdminEmployees.jsx';
 import AdminEmployeeDetails from './pages/admin/AdminEmployeeDetails.jsx';
+import AdminDepartments    from './pages/admin/AdminDepartments.jsx';
 import AdminAttendance     from './pages/admin/AdminAttendance.jsx';
 import AdminLeaveRequests  from './pages/admin/AdminLeaveRequests.jsx';
 import AdminLeaveBalances  from './pages/admin/AdminLeaveBalances.jsx';
@@ -39,6 +40,15 @@ function RequireAuth({ role, children }) {
 export default function App() {
   const { state } = useApp();
 
+  // While a saved login is being restored, don't redirect to the login page.
+  if (state.booting) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-[13px] text-ink-mute">
+        Loading your workspace…
+      </div>
+    );
+  }
+
   return (
     <>
       <Routes>
@@ -57,6 +67,7 @@ export default function App() {
           <Route index element={<AdminDashboard />} />
           <Route path="employees" element={<AdminEmployees />} />
           <Route path="employees/:empId" element={<AdminEmployeeDetails />} />
+          <Route path="departments" element={<AdminDepartments />} />
           <Route path="attendance" element={<AdminAttendance />} />
           <Route path="leave" element={<AdminLeaveRequests />} />
           <Route path="leave-balances" element={<AdminLeaveBalances />} />
@@ -66,7 +77,8 @@ export default function App() {
         </Route>
 
         {/* Employee */}
-        <Route path="/employee" element={<RequireAuth role="employee"><AppShell /></RequireAuth>}>
+        {/* Open to HR too: HR staff check in and apply for leave like everyone else */}
+        <Route path="/employee" element={<RequireAuth><AppShell /></RequireAuth>}>
           <Route index element={<EmpDashboard />} />
           <Route path="attendance" element={<EmpAttendance />} />
           <Route path="history" element={<EmpHistory />} />

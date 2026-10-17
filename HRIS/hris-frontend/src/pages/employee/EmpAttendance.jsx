@@ -1,14 +1,15 @@
 import { useApp } from '../../context/AppContext.jsx';
-import { CURRENT_EMP_ID } from '../../lib/mockData.js';
+import { localDateIso } from '../../lib/api.js';
 import { RuleBanner } from '../../components/ui/RuleBanner.jsx';
 import StatCard from '../../components/ui/StatCard.jsx';
 import { useClock } from '../../hooks/useClock.js';
 
 export default function EmpAttendance() {
-  const { state, dispatch, toast } = useApp();
+  const { state, actions, toast } = useApp();
+  const CURRENT_EMP_ID = state.currentEmpId;
   const { time, date } = useClock();
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateIso();
   const todayRec = state.attendance.find(a => a.empId === CURRENT_EMP_ID && a.date === today);
   const checkedIn  = !!todayRec?.checkIn;
   const checkedOut = !!todayRec?.checkOut;
@@ -25,13 +26,21 @@ export default function EmpAttendance() {
   const earlyDepartures = last30.filter(a => a.status === 'Early Departure').length;
   const absentDays     = last30.filter(a => a.status === 'Absent').length;
 
-  function checkIn() {
-    dispatch({ type: 'CHECK_IN' });
-    toast('success', 'Checked in', `You checked in at ${time}.`);
+  async function checkIn() {
+    try {
+      await actions.checkIn();
+      toast('success', 'Checked in', `You checked in at ${time}.`);
+    } catch (err) {
+      toast('error', 'Check-in failed', err.message);
+    }
   }
-  function checkOut() {
-    dispatch({ type: 'CHECK_OUT' });
-    toast('info', 'Checked out', `You checked out at ${time}.`);
+  async function checkOut() {
+    try {
+      await actions.checkOut();
+      toast('info', 'Checked out', `You checked out at ${time}.`);
+    } catch (err) {
+      toast('error', 'Check-out failed', err.message);
+    }
   }
 
   return (
@@ -50,7 +59,7 @@ export default function EmpAttendance() {
             </div>
           </div>
           <div className="flex gap-7 flex-wrap">
-            {[['Check-in', fmtTs(todayRec?.checkIn)], ['Check-out', fmtTs(todayRec?.checkOut)], ['Hours today', '0h 00m']].map(([l, v]) => (
+            {[['Check-in', fmtTs(todayRec?.checkIn)], ['Check-out', fmtTs(todayRec?.checkOut)], ['Hours today', todayRec?.formatted_working_hours || '—']].map(([l, v]) => (
               <div key={l}>
                 <div className="text-[11px] opacity-75 uppercase tracking-[.05em]">{l}</div>
                 <div className="font-mono text-[17px] font-semibold mt-0.5">{v}</div>

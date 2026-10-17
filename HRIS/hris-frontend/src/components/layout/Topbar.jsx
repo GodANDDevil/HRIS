@@ -1,6 +1,5 @@
 import { useLocation } from 'react-router-dom';
 import { useApp } from '../../context/AppContext.jsx';
-import { CURRENT_EMP_ID } from '../../lib/mockData.js';
 import NotifDropdown from './NotifDropdown.jsx';
 import ProfileDropdown from './ProfileDropdown.jsx';
 import { getInitials } from '../../lib/mockData.js';
@@ -8,6 +7,7 @@ import { getInitials } from '../../lib/mockData.js';
 const PAGE_META = {
   '/admin':              ['Dashboard',         'Organization attendance & leave overview'],
   '/admin/employees':    ['Employees',         'Directory and profile management'],
+  '/admin/departments':  ['Departments',       'Organization structure — managed by the HR Head'],
   '/admin/attendance':   ['Attendance Records','View-only — generated from employee check-ins'],
   '/admin/leave':        ['Leave Requests',    'Review, approve, or reject requests'],
   '/admin/leave-balances':['Leave Balances',   'Entitlement usage across the organization'],
@@ -36,7 +36,7 @@ export default function Topbar() {
 
   const isEmp = state.role === 'employee';
   const person = state.user;
-  const audienceKey = isEmp ? `employee:${CURRENT_EMP_ID}` : 'admin';
+  const audienceKey = isEmp ? `employee:${state.currentEmpId}` : 'admin';
   const myNotifs = (state.notifications || []).filter(n => n.audience === audienceKey);
   const unread = myNotifs.filter(n => !n.read).length;
 
@@ -89,7 +89,7 @@ export default function Topbar() {
           <div className="text-left hidden md:block">
             <div className="font-semibold text-[13px] leading-[1.2]">{person?.name}</div>
             <div className="text-[11.5px] text-ink-mute leading-[1.2]">
-              {isEmp ? person?.id || 'EMP' : 'HR Administrator'}
+              {isEmp ? (person?.dept || person?.position || 'Employee') : (person?.role === 'HEAD' ? 'HR Head' : 'HR Staff')}
             </div>
           </div>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

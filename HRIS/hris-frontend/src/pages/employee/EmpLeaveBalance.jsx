@@ -10,7 +10,7 @@ export default function EmpLeaveBalance() {
     { label: 'Annual Leave',    key: 'annual',    icon: '⚖', iconBg: 'bg-primary-50', iconColor: 'text-primary-700' },
     { label: 'Sick Leave',      key: 'sick',      icon: '⚖', iconBg: 'bg-danger-50',  iconColor: 'text-danger-700'  },
     { label: 'Casual Leave',    key: 'casual',    icon: '⚖', iconBg: 'bg-warning-50', iconColor: 'text-warning-700' },
-    { label: 'Emergency Leave', key: 'emergency', icon: '⚖', iconBg: 'bg-primary-50', iconColor: 'text-primary-700' },
+    { label: 'Festive Leave',   key: 'festive',   icon: '⚖', iconBg: 'bg-primary-50', iconColor: 'text-primary-700' },
   ];
 
   return (
@@ -47,7 +47,7 @@ export default function EmpLeaveBalance() {
           );
         })}
         <div className="text-[11.5px] text-ink-mute mt-2">
-          Unpaid Leave has no annual cap. Other leave requests are reviewed individually by HR.
+          Limits are per rolling 6 months and count approved + pending requests. Study, Half Day, Unpaid, Emergency and Other leave have no cap and are reviewed individually by HR.
         </div>
       </div>
     </div>

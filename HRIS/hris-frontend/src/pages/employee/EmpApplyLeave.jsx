@@ -3,54 +3,47 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext.jsx';
 import { RuleBanner } from '../../components/ui/RuleBanner.jsx';
 import ProgressBar from '../../components/ui/ProgressBar.jsx';
-import { CURRENT_EMP_ID, LEAVE_TYPES } from '../../lib/mockData.js';
+import { LEAVE_TYPES, leaveTypeLabel } from '../../lib/mockData.js';
 
 export default function EmpApplyLeave() {
-  const { state, dispatch, toast } = useApp();
+  const { state, actions, toast } = useApp();
   const navigate = useNavigate();
   const { leaveBalance } = state;
 
-  const [form, setForm] = useState({ type: 'annual', start: '', end: '', reason: '', attachment: '' });
+  const [form, setForm] = useState({ type: 'annual', start: '', end: '', reason: '', file: null });
+  const [submitting, setSubmitting] = useState(false);
 
   function onChange(e) { setForm(f => ({ ...f, [e.target.name]: e.target.value })); }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     if (!form.start || !form.end || !form.reason) {
       toast('error', 'Missing fields', 'Please fill in all required fields.');
       return;
     }
-    const start = new Date(form.start);
-    const end   = new Date(form.end);
-    if (end < start) { toast('error', 'Invalid dates', 'End date must be after start date.'); return; }
-    const days = Math.ceil((end - start) / 86400000) + 1;
-    const emp = state.employees.find(e => e.id === CURRENT_EMP_ID);
-    const req = {
-      id: 'LR-' + Date.now(),
-      empId: CURRENT_EMP_ID,
-      empName: emp?.name || 'Employee',
-      type: form.type,
-      start: form.start,
-      end: form.end,
-      days,
-      reason: form.reason,
-      submitted: new Date().toISOString().slice(0, 10),
-      status: 'Pending',
-      attachment: form.attachment || null,
-    };
-    dispatch({ type: 'SUBMIT_LEAVE', req });
-    toast('success', 'Leave submitted', `Your ${form.type} leave request has been submitted.`);
-    navigate('/employee/leave-requests');
+    if (form.end < form.start) { toast('error', 'Invalid dates', 'End date must be after start date.'); return; }
+
+    setSubmitting(true);
+    try {
+      // Django computes total_days and enforces the 6-month leave limits.
+      await actions.submitLeave(form);
+      toast('success', 'Leave submitted', `Your ${leaveTypeLabel(form.type)} request has been submitted.`);
+      navigate('/employee/leave-requests');
+    } catch (err) {
+      toast('error', 'Leave not submitted', err.message);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   const inputCls = 'border border-border rounded-[10px] px-3 py-2.5 text-[13.5px] bg-surface text-ink w-full focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-50';
 
   const balRows = [
-    { label: 'Annual Leave',    key: 'annual',    total: leaveBalance.annual.total,    used: leaveBalance.annual.used },
-    { label: 'Sick Leave',      key: 'sick',      total: leaveBalance.sick.total,      used: leaveBalance.sick.used },
-    { label: 'Casual Leave',    key: 'casual',    total: leaveBalance.casual.total,    used: leaveBalance.casual.used },
-    { label: 'Emergency Leave', key: 'emergency', total: leaveBalance.emergency.total, used: leaveBalance.emergency.used },
-  ];
+    { label: 'Annual Leave',  key: 'annual' },
+    { label: 'Sick Leave',    key: 'sick' },
+    { label: 'Casual Leave',  key: 'casual' },
+    { label: 'Festive Leave', key: 'festive' },
+  ].map(r => ({ ...r, total: leaveBalance[r.key]?.total ?? 0, used: leaveBalance[r.key]?.used ?? 0 }));
 
   return (
     <div>
@@ -85,13 +78,13 @@ export default function EmpApplyLeave() {
                 Attachment <span className="text-ink-mute font-normal">(optional)</span>
               </label>
               <input className={inputCls} type="file" name="attachment"
-                onChange={e => setForm(f => ({ ...f, attachment: e.target.files[0]?.name || '' }))} />
+                onChange={e => setForm(f => ({ ...f, file: e.target.files[0] || null }))} />
               <div className="text-[11.5px] text-ink-mute">Attach a supporting document such as a medical certificate.</div>
             </div>
             <div className="flex gap-2.5 mt-1">
-              <button type="submit"
-                className="inline-flex items-center justify-center rounded-[12px] px-6 py-4 text-[15px] font-semibold bg-primary text-white hover:bg-primary-600 active:scale-[.98] transition-all">
-                Submit Leave Request
+              <button type="submit" disabled={submitting}
+                className="disabled:opacity-60 inline-flex items-center justify-center rounded-[12px] px-6 py-4 text-[15px] font-semibold bg-primary text-white hover:bg-primary-600 active:scale-[.98] transition-all">
+                {submitting ? 'Submitting…' : 'Submit Leave Request'}
               </button>
               <Link to="/employee/leave-requests"
                 className="inline-flex items-center justify-center rounded-[12px] px-6 py-4 text-[15px] font-semibold bg-surface border border-border text-ink-soft hover:bg-bg transition-colors">
@@ -103,7 +96,8 @@ export default function EmpApplyLeave() {
 
         {/* Balance sidebar */}
         <div className="bg-surface border border-border rounded-[14px] shadow-sm p-5 self-start">
-          <div className="font-sora font-bold text-[15px] mb-3">Your leave balance</div>
+          <div className="font-sora font-bold text-[15px] mb-1">Your leave balance</div>
+          <div className="text-[11.5px] text-ink-mute mb-3">Rolling 6 months · approved + pending. Other leave types have no cap.</div>
           {balRows.map(r => (
             <div key={r.key} className="mb-4">
               <div className="flex justify-between text-[13px] mb-1.5">

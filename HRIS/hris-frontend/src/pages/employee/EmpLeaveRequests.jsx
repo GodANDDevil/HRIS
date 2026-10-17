@@ -1,18 +1,22 @@
 import { Link } from 'react-router-dom';
 import { useApp } from '../../context/AppContext.jsx';
-import { CURRENT_EMP_ID, leaveTypeLabel } from '../../lib/mockData.js';
+import { leaveTypeLabel } from '../../lib/mockData.js';
 import Badge, { statusVariant } from '../../components/ui/Badge.jsx';
 
 export default function EmpLeaveRequests() {
-  const { state, dispatch, toast } = useApp();
+  const { state, actions, toast } = useApp();
 
   const requests = state.leaveRequests
-    .filter(l => l.empId === CURRENT_EMP_ID)
+    .filter(l => l.empId === state.currentEmpId)
     .sort((a, b) => b.submitted.localeCompare(a.submitted));
 
-  function cancelLeave(id) {
-    dispatch({ type: 'CANCEL_LEAVE', id });
-    toast('info', 'Leave cancelled', 'Your leave request has been cancelled.');
+  async function cancelLeave(id) {
+    try {
+      await actions.cancelLeave(id);
+      toast('info', 'Leave cancelled', 'Your leave request has been cancelled.');
+    } catch (err) {
+      toast('error', 'Could not cancel', err.message);
+    }
   }
 
   const thCls = 'text-left text-[11px] uppercase tracking-[.04em] text-ink-mute px-3.5 py-2.5 border-b border-border whitespace-nowrap font-semibold';

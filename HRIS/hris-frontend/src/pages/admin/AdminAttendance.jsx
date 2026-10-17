@@ -3,7 +3,8 @@ import { useApp } from '../../context/AppContext.jsx';
 import { RuleBanner } from '../../components/ui/RuleBanner.jsx';
 import Badge, { statusVariant } from '../../components/ui/Badge.jsx';
 import Avatar from '../../components/ui/Avatar.jsx';
-import { DEPTS, fmtTime, calcHours } from '../../lib/mockData.js';
+import { fmtTime, calcHours } from '../../lib/mockData.js';
+import { localDateIso } from '../../lib/api.js';
 
 export default function AdminAttendance() {
   const { state } = useApp();
@@ -14,7 +15,7 @@ export default function AdminAttendance() {
   const empMap = Object.fromEntries(state.employees.map(e => [e.id, e]));
 
   const records = state.attendance
-    .filter(a => a.date !== new Date().toISOString().slice(0, 10) || a.checkIn)
+    .filter(a => a.date !== localDateIso() || a.checkIn)
     .sort((a, b) => b.date.localeCompare(a.date))
     .map(a => ({ ...a, emp: empMap[a.empId] }))
     .filter(a => a.emp)
@@ -49,11 +50,11 @@ export default function AdminAttendance() {
           <div className="flex gap-2.5 flex-wrap">
             <select value={dept} onChange={e => setDept(e.target.value)} className={selectCls}>
               <option value="all">All departments</option>
-              {DEPTS.map(d => <option key={d}>{d}</option>)}
+              {state.departments.map(d => <option key={d.id}>{d.name}</option>)}
             </select>
             <select value={status} onChange={e => setStatus(e.target.value)} className={selectCls}>
               <option value="all">All statuses</option>
-              {['Present','Late','Early Departure','Absent','Checked In'].map(s => <option key={s}>{s}</option>)}
+              {['Present','Late','Early Departure','Absent','Checked In','On Leave'].map(s => <option key={s}>{s}</option>)}
             </select>
           </div>
         </div>

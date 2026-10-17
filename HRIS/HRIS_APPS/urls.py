@@ -13,5 +13,6 @@ router.register(r'attendance', AttendanceViewSet, basename='attendance')
 urlpatterns = [
     path('health/', views.api_health, name='api_health'),
     path('csrf/', views.api_csrf, name='api_csrf'),
+    path('me/', views.me, name='api_me'),
     path('', include(router.urls)),
 ]

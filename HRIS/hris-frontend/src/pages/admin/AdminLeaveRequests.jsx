@@ -9,7 +9,7 @@ import { leaveTypeLabel } from '../../lib/mockData.js';
 const TABS = ['pending', 'approved', 'rejected', 'all'];
 
 export default function AdminLeaveRequests() {
-  const { state, dispatch, toast } = useApp();
+  const { state, dispatch, actions, toast } = useApp();
   const [tab, setTab] = useState('pending');
 
   const filtered = state.leaveRequests.filter(l => {
@@ -17,13 +17,21 @@ export default function AdminLeaveRequests() {
     return l.status.toLowerCase() === tab;
   });
 
-  function approve(id, name) {
-    dispatch({ type: 'APPROVE_LEAVE', id });
-    toast('success', 'Leave approved', `${name}'s leave has been approved.`);
+  async function approve(id, name) {
+    try {
+      await actions.reviewLeave(id, 'APPROVED');
+      toast('success', 'Leave approved', `${name}'s leave has been approved.`);
+    } catch (err) {
+      toast('error', 'Could not approve', err.message);
+    }
   }
-  function reject(id, name) {
-    dispatch({ type: 'REJECT_LEAVE', id });
-    toast('info', 'Leave rejected', `${name}'s leave has been rejected.`);
+  async function reject(id, name) {
+    try {
+      await actions.reviewLeave(id, 'REJECTED');
+      toast('info', 'Leave rejected', `${name}'s leave has been rejected.`);
+    } catch (err) {
+      toast('error', 'Could not reject', err.message);
+    }
   }
   function view(id) {
     dispatch({ type: 'OPEN_MODAL', modal: 'leave-details', leaveDetailsId: id });
@@ -75,7 +83,10 @@ export default function AdminLeaveRequests() {
                         className="px-3 py-1.5 rounded-[8px] text-[12.5px] font-semibold bg-surface border border-border text-ink-soft hover:bg-bg transition-colors">
                         View
                       </button>
-                      {l.status === 'Pending' && (
+                      {l.status === 'Pending' && l.empId === state.currentEmpId && (
+                        <span className="text-[12px] text-ink-mute italic">Your request — another HR member reviews it</span>
+                      )}
+                      {l.status === 'Pending' && l.empId !== state.currentEmpId && (
                         <>
                           <button onClick={() => approve(l.id, l.empName)}
                             className="px-3 py-1.5 rounded-[8px] text-[12.5px] font-semibold bg-success text-white hover:bg-success-700 transition-colors">

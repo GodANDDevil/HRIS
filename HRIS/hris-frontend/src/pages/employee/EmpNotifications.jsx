@@ -1,5 +1,4 @@
 import { useApp } from '../../context/AppContext.jsx';
-import { CURRENT_EMP_ID } from '../../lib/mockData.js';
 import EmptyState from '../../components/ui/EmptyState.jsx';
 
 const BellIcon = () => (
@@ -13,7 +12,7 @@ export default function EmpNotifications() {
   const { state, dispatch } = useApp();
 
   const notifs = state.notifications
-    .filter(n => n.audience === `employee:${CURRENT_EMP_ID}`)
+    .filter(n => n.audience === `employee:${state.currentEmpId}`)
     .sort((a, b) => b.time.localeCompare(a.time));
 
   return (

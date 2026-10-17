@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useApp } from '../../context/AppContext.jsx';
-import { CURRENT_EMP_ID, fmtTime, calcHours } from '../../lib/mockData.js';
+import { fmtTime, calcHours } from '../../lib/mockData.js';
 import Badge, { statusVariant } from '../../components/ui/Badge.jsx';
 import Chip from '../../components/ui/Chip.jsx';
 
@@ -11,7 +11,7 @@ export default function EmpHistory() {
   const [filter, setFilter] = useState('all');
 
   const records = state.attendance
-    .filter(a => a.empId === CURRENT_EMP_ID)
+    .filter(a => a.empId === state.currentEmpId)
     .sort((a, b) => b.date.localeCompare(a.date))
     .filter(a => {
       if (filter === 'all') return true;

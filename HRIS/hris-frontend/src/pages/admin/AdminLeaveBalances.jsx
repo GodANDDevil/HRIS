@@ -1,20 +1,20 @@
 import { useApp } from '../../context/AppContext.jsx';
 import Avatar from '../../components/ui/Avatar.jsx';
+import { LEAVE_LIMITS } from '../../lib/mockData.js';
+import { localDateIso } from '../../lib/api.js';
 
 export default function AdminLeaveBalances() {
   const { state } = useApp();
 
-  // Build per-employee balance from leave requests
+  // Same rule as the backend (Leave.clean): APPROVED + PENDING days in the
+  // last 180 days count against LEAVE_LIMITS.
+  const since = (() => { const d = new Date(); d.setDate(d.getDate() - 180); return localDateIso(d); })();
   function getBalance(empId) {
-    const approved = state.leaveRequests.filter(l => l.empId === empId && l.status === 'Approved');
-    const used = { annual: 0, sick: 0, casual: 0, emergency: 0 };
-    approved.forEach(l => { if (used[l.type] !== undefined) used[l.type] += l.days; });
-    return {
-      annual_rem:    18 - used.annual,
-      sick_rem:      10 - used.sick,
-      casual_rem:    8  - used.casual,
-      emergency_rem: 4  - used.emergency,
-    };
+    const used = { annual: 0, sick: 0, casual: 0, festive: 0 };
+    state.leaveRequests
+      .filter(l => l.empId === empId && ['Approved', 'Pending'].includes(l.status) && l.start >= since)
+      .forEach(l => { if (used[l.type] !== undefined) used[l.type] += l.days || 0; });
+    return used;
   }
 
   const thCls = 'text-left text-[11px] uppercase tracking-[.04em] text-ink-mute px-3.5 py-2.5 border-b border-border whitespace-nowrap font-semibold';
@@ -25,7 +25,7 @@ export default function AdminLeaveBalances() {
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-[13px]">
           <thead>
-            <tr>{['Employee','Department','Annual','Sick','Casual','Emergency'].map(h => <th key={h} className={thCls}>{h}</th>)}</tr>
+            <tr>{['Employee','Department','Annual','Sick','Casual','Festive'].map(h => <th key={h} className={thCls}>{h}</th>)}</tr>
           </thead>
           <tbody>
             {state.employees.map(e => {
@@ -39,10 +39,9 @@ export default function AdminLeaveBalances() {
                     </div>
                   </td>
                   <td className={tdCls}>{e.dept}</td>
-                  <td className={`${tdCls} font-mono`}>{b.annual_rem}/18</td>
-                  <td className={`${tdCls} font-mono`}>{b.sick_rem}/10</td>
-                  <td className={`${tdCls} font-mono`}>{b.casual_rem}/8</td>
-                  <td className={`${tdCls} font-mono`}>{b.emergency_rem}/4</td>
+                  {['annual', 'sick', 'casual', 'festive'].map(k => (
+                    <td key={k} className={`${tdCls} font-mono`}>{LEAVE_LIMITS[k] - b[k]}/{LEAVE_LIMITS[k]}</td>
+                  ))}
                 </tr>
               );
             })}

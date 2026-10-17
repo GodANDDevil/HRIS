@@ -4,17 +4,17 @@ import { useApp } from '../../context/AppContext.jsx';
 import { RuleBanner } from '../../components/ui/RuleBanner.jsx';
 import Badge, { statusVariant } from '../../components/ui/Badge.jsx';
 import Avatar from '../../components/ui/Avatar.jsx';
-import { DEPTS } from '../../lib/mockData.js';
+import { localDateIso } from '../../lib/api.js';
 
 export default function AdminEmployees() {
-  const { state, dispatch, toast } = useApp();
+  const { state, dispatch, actions, toast } = useApp();
   const navigate = useNavigate();
   const [q, setQ] = useState('');
   const [dept, setDept] = useState('all');
   const [status, setStatus] = useState('all');
   const [attn, setAttn] = useState('all');
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateIso();
 
   function getAttStatus(empId) {
     const rec = state.attendance.find(a => a.empId === empId && a.date === today);
@@ -32,9 +32,13 @@ export default function AdminEmployees() {
     return true;
   });
 
-  function toggleStatus(id, name) {
-    dispatch({ type: 'TOGGLE_EMP_STATUS', id });
-    toast('info', 'Status updated', `${name}'s status has been toggled.`);
+  async function toggleStatus(emp) {
+    try {
+      const updated = await actions.updateEmployee(emp.pk, { is_active: emp.status !== 'Active' });
+      toast('info', 'Status updated', `${updated.name} is now ${updated.status.toLowerCase()}.`);
+    } catch (err) {
+      toast('error', 'Could not update status', err.message);
+    }
   }
 
   const selectCls = 'border border-border rounded-[10px] px-3 py-2 text-[13.5px] bg-surface text-ink focus:outline-none focus:border-primary';
@@ -68,7 +72,7 @@ export default function AdminEmployees() {
           <div className="flex gap-2.5 flex-wrap">
             <select value={dept} onChange={e => setDept(e.target.value)} className={selectCls}>
               <option value="all">All departments</option>
-              {DEPTS.map(d => <option key={d}>{d}</option>)}
+              {state.departments.map(d => <option key={d.id}>{d.name}</option>)}
             </select>
             <select value={status} onChange={e => setStatus(e.target.value)} className={selectCls}>
               <option value="all">All statuses</option>
@@ -117,9 +121,9 @@ export default function AdminEmployees() {
                           Edit
                         </button>
                         <button
-                          onClick={() => toggleStatus(e.id, e.name)}
+                          onClick={() => toggleStatus(e)}
                           className="px-3 py-1.5 rounded-[8px] text-[12.5px] font-semibold bg-surface border border-border text-ink-soft hover:bg-bg transition-colors">
-                          Power
+                          {e.status === 'Active' ? 'Deactivate' : 'Activate'}
                         </button>
                       </div>
                     </td>

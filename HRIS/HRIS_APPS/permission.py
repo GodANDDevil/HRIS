@@ -1,4 +1,6 @@
 
+import re
+
 from rest_framework.permissions import BasePermission
 
 from .models import Employee
@@ -17,12 +19,21 @@ def get_employees(user):
     )
 
 
+# Matches "HR", "People Engagement & HR", "Human Resources", "HR & Admin" ...
+HR_NAME_PATTERN = re.compile(r"\b(hr|human\s+resources?)\b", re.IGNORECASE)
+
+
+def is_hr_department_name(name):
+    """True if a department name refers to HR."""
+    return bool(name and HR_NAME_PATTERN.search(name))
+
+
 def is_hr_department(employee):
     """Check whether an employee belongs to HR."""
     return bool(
         employee
         and employee.department
-        and employee.department.name.strip().casefold() == "hr"
+        and is_hr_department_name(employee.department.name)
     )
 
 
@@ -58,6 +69,25 @@ class IsHRDepartment(BasePermission):
             and employee.is_active
             and is_hr_department(employee)
             and employee.role in ("HEAD", "STAFF")
+        )
+
+
+class IsHRHead(BasePermission):
+    """
+    Only the active HR Department Head (Admin).
+    Used for creating, editing and deleting departments.
+    """
+
+    message = "Only the HR Department Head can manage departments."
+
+    def has_permission(self, request, view):
+        employee = get_employees(request.user)
+
+        return bool(
+            employee
+            and employee.is_active
+            and employee.role == "HEAD"
+            and is_hr_department(employee)
         )
 
 

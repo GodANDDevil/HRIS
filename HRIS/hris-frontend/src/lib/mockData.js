@@ -5,21 +5,31 @@ export const DEPTS = [
   'Finance', 'Human Resources', 'Operations',
 ];
 
+// ids must match HRIS_APPS.models.LEAVE_TYPE_CHOICES (lower-cased).
 export const LEAVE_TYPES = [
   { id: 'annual', label: 'Annual Leave' },
   { id: 'sick', label: 'Sick Leave' },
   { id: 'casual', label: 'Casual Leave' },
-  { id: 'emergency', label: 'Emergency Leave' },
+  { id: 'festive', label: 'Festive Leave' },
+  { id: 'study', label: 'Study Leave' },
+  { id: 'half_day', label: 'Half Day' },
   { id: 'unpaid', label: 'Unpaid Leave' },
-  { id: 'other', label: 'Other' },
+  { id: 'emergency', label: 'Emergency Leave' },
+  { id: 'others', label: 'Others' },
 ];
+
+// Mirrors HRIS_APPS.models.LEAVE_LIMITS (days per rolling 6 months).
+export const LEAVE_LIMITS = { annual: 10, sick: 15, casual: 6, festive: 6 };
 
 function uid(prefix) {
   return prefix + '-' + Math.random().toString(36).slice(2, 7).toUpperCase();
 }
 
+// Local calendar date (toISOString() is UTC, which is "yesterday" in Nepal
+// between 00:00 and 05:45).
 function todayIso() {
-  return new Date().toISOString().slice(0, 10);
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
 function addDays(iso, n) {
@@ -123,7 +133,9 @@ export const AUDIT_LOG = [
 ];
 
 export function getInitials(name = '') {
-  return name.slice(0, 2).toUpperCase();
+  const parts = String(name).trim().split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return String(name).slice(0, 2).toUpperCase();
 }
 
 export function fmtDate(iso) {
@@ -151,3 +163,4 @@ export function leaveTypeLabel(typeId) {
 }
 
 export function todayIso2() { return todayIso(); }
+export { todayIso };

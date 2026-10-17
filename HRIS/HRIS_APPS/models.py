@@ -168,7 +168,9 @@ ATTENDANCE_STATUS_CHOICES = (
 #Attendance model to store attendance information
 class Attendance(models.Model):
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="attendance_records")
-    date = models.DateField(auto_now_add=True)  # one record per day
+    # auto_now_add made the field non-editable and left self.date = None inside
+    # save() for new rows, which crashed the approved-leave lookup below.
+    date = models.DateField(default=timezone.localdate)  # one record per day
     check_in = models.DateTimeField(null=True, blank=True)
     check_out = models.DateTimeField(null=True, blank=True)
     working_hours = models.DurationField(null=True, blank=True)
@@ -212,7 +214,8 @@ class Attendance(models.Model):
         if approved_leave:
             self.status = "ON_LEAVE"
 
-        elif self.check_in and self.check_in.time() >= time(11, 0):
+        # check_in is stored in UTC; compare against local (Asia/Kathmandu) time.
+        elif self.check_in and timezone.localtime(self.check_in).time() >= time(11, 0):
             self.status = "LATE"
 
         elif self.check_in and not self.check_out:
