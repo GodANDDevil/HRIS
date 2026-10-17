@@ -138,14 +138,25 @@ export function AppProvider({ children }) {
     setTimeout(() => dispatch({ type: 'REMOVE_TOAST', id }), 4000);
   }, []);
 
-  const login = useCallback((role) => {
-    const user = role === 'admin'
-      ? ADMIN_USER
-      : INITIAL_EMPLOYEES.find(e => e.id === CURRENT_EMP_ID);
-    dispatch({ type: 'LOGIN', role, user });
-  }, []);
+  const login = useCallback((role, authenticatedUser = null) => {
+  const fallbackUser = {
+    name: 'User',
+    email: '',
+  };
 
-  const logout = useCallback(() => dispatch({ type: 'LOGOUT' }), []);
+  dispatch({
+    type: 'LOGIN',
+    role,
+    user: authenticatedUser || fallbackUser,
+  });
+}, []);
+
+const logout = useCallback(() => {
+  localStorage.removeItem('hris_access_token');
+  localStorage.removeItem('hris_refresh_token');
+
+  dispatch({ type: 'LOGOUT' });
+}, []);
 
   return (
     <AppCtx.Provider value={{ state, dispatch, toast, login, logout }}>

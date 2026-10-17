@@ -1,44 +1,101 @@
+
 from rest_framework.permissions import BasePermission
+
 from .models import Employee
 
+
 def get_employees(user):
+    """Return the Employee profile linked to a Django user."""
     if not user or not user.is_authenticated:
         return None
-    return(
-        Employee.objects.filter(user=user).select_related('department').first()
+
+    return (
+        Employee.objects
+        .select_related("department")
+        .filter(user=user)
+        .first()
     )
+
+
+def is_hr_department(employee):
+    """Check whether an employee belongs to HR."""
+    return bool(
+        employee
+        and employee.department
+        and employee.department.name.strip().casefold() == "hr"
+    )
+
+
 class IsAdminOrHR(BasePermission):
-    """Allow only Admin (HR Head) or HR Staff to create accounts or departments."""
+    """
+    Allow HR Department Head (Admin) and HR Department Staff
+    to access department and account management endpoints.
+    """
+
     def has_permission(self, request, view):
-        user = request.user
+        employee = get_employees(request.user)
+
+        if not employee or not employee.is_active:
+            return False
+
         return (
-            (user.role == "HEAD" and user.department.name == "HR") or
-            (user.role == "STAFF" and user.department.name == "HR")
+            is_hr_department(employee)
+            and employee.role in ("HEAD", "STAFF")
         )
 
+
 class IsHRDepartment(BasePermission):
-    """Allow only HR Department (Head + Staff)."""
+    """
+    Allow active HR Department Heads and HR Department Staff.
+    Use this for endpoints intended for both HR roles.
+    """
+
     def has_permission(self, request, view):
-        user = request.user
-        return user.department and user.department.name == "HR"
+        employee = get_employees(request.user)
+
+        return bool(
+            employee
+            and employee.is_active
+            and is_hr_department(employee)
+            and employee.role in ("HEAD", "STAFF")
+        )
+
 
 class AttendancePermission(BasePermission):
-    """HR sees all, Department Heads see their staff, Staff see themselves."""
+    """
+    HR Head and HR Staff: access all attendance records.
+    Other Department Heads: access their department's records.
+    Other Staff: access their own records.
+    """
+
     def has_permission(self, request, view):
-        # Allow authenticated users to hit the endpoint
-        return request.user and request.user.is_authenticated
+        employee = get_employees(request.user)
+
+        return bool(employee and employee.is_active)
 
     def has_object_permission(self, request, view, obj):
-        user = request.user
-        if user.department and user.department.name == "HR":
-            return True  # HR sees all
-        if user.role == "HEAD" and obj.employee.department == user.department:
-            return True  # Dept Head sees their dept
-        return obj.employee == user  # Staff sees only themselves
-    def has_object_permission(self, request, view, obj):
-        user = request.user
-        if user.department and user.department.name == "HR":
-            return True  # HR sees all
-        if user.role == "HEAD" and obj.employee.department == user.department:
-            return True  # Dept Head sees their dept
-        return obj.employee == user  # Staff sees only themselves
+        employee = get_employees(request.user)
+
+        if not employee or not employee.is_active:
+            return False
+
+        # Attendance.employee is an Employee object.
+        record_employee = getattr(obj, "employee", None)
+
+        if record_employee is None:
+            return False
+
+        # HR Head and HR Staff can access all attendance records.
+        if is_hr_department(employee):
+            return employee.role in ("HEAD", "STAFF")
+
+        # A department head can access records from their department.
+        if employee.role == "HEAD":
+            return (
+                employee.department_id is not None
+                and record_employee.department_id
+                == employee.department_id
+            )
+
+        # Regular staff can access only their own attendance.
+        return record_employee.pk == employee.pk
