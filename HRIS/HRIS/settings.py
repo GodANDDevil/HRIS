@@ -13,29 +13,35 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 import os
 from datetime import timedelta
 from pathlib import Path
+from dotenv import load_dotenv
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Load environment variables from .env file
+load_dotenv(BASE_DIR / '.env')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-)bl@(ml@om)6(fjfmncsf_vdhjd267&p^is5g2p22_0=nr-i+!'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [host.strip() 
+                 for host in os.getenv('ALLOWED_HOSTS', '').split(',') 
+                 if host.strip()
+                 ]
 
 # The Vite development server proxies /api requests to Django. Keep the
 # origins trusted as well for direct frontend-to-backend requests.
-CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
-]
-
+CSRF_TRUSTED_ORIGINS = [origin.strip()
+                        for origin in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',')
+                        if origin.strip()
+                        ]
 
 # Application definition
 
@@ -50,7 +56,12 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders'
 ]
-CORS_ALLOWED_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173']
+
+CORS_ALLOWED_ORIGINS = [origin.strip()
+                        for origin in os.getenv('CORS_ALLOWED_ORIGINS', '').split(',')
+                        if origin.strip()
+                        ]
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         # JWT first: if SessionAuthentication runs first and the browser also has
@@ -111,15 +122,14 @@ WSGI_APPLICATION = 'HRIS.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME', 'hris_db'),
-        'USER': os.environ.get('DB_USER', 'postgres'),
+        'NAME': os.environ.get('DB_NAME'),
+        'USER': os.environ.get('DB_USER'),
         # Move this into an environment variable / .env before sharing the repo.
-        'PASSWORD': os.environ.get('DB_PASSWORD', 'Anamolshr12'),
-        'HOST': os.environ.get('DB_HOST', '127.0.0.1'),
-        'PORT': os.environ.get('DB_PORT', '5432'),
+        'PASSWORD': os.environ.get('DB_PASSWORD'),
+        'HOST': os.environ.get('DB_HOST'),
+        'PORT': os.environ.get('DB_PORT'),
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
